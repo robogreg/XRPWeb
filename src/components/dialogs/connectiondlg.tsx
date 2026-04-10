@@ -1,6 +1,7 @@
 /// <reference types="web-bluetooth" />
 import Bluetooth from '@assets/images/Bluetooth_FM_Black.png';
 import Usb from '@assets/images/USB_icon.svg.png';
+import SimIcon from '@assets/images/python.svg';
 import { ConnectionType, ListItem } from '@/utils/types';
 import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
@@ -48,6 +49,10 @@ function ConnectionDlg(connprops: ConnProps) {
             label: t('usbConnection'),
             image: Usb,
         },
+        {
+            label: 'Simulation Mode',
+            image: SimIcon,
+        },
     ];
 
     /**
@@ -63,6 +68,9 @@ function ConnectionDlg(connprops: ConnProps) {
                 break;
             case t('usbConnection'):
                 connprops.callback(ConnectionType.USB);
+                break;
+            case 'Simulation Mode':
+                connprops.callback(ConnectionType.SIMULATION);
                 break;
             default:
                 break;

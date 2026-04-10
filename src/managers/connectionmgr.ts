@@ -3,6 +3,7 @@ import { ConnectionCMD, ConnectionType } from '@/utils/types';
 import Connection, { ConnectionState } from '@/connections/connection';
 import { USBConnection } from '@/connections/usbconnection';
 import { BluetoothConnection } from '@/connections/bluetoothconnection';
+import { SimulationConnection } from '@/connections/simulationconnection';
 import { CommandToXRPMgr } from './commandstoxrpmgr';
 import PluginMgr from './pluginmgr';
 
@@ -31,6 +32,9 @@ export default class ConnectionMgr {
         // Instantiate the Bluetooth Connection
         this.connections[ConnectionType.BLUETOOTH] = new BluetoothConnection(this);
 
+        // Instantiate the Simulation Connection
+        this.connections[ConnectionType.SIMULATION] = new SimulationConnection(this);
+
         /*** Listen for Subscriptions ***/
         this.appMgr.on(EventType.EVENT_CONNECTION, (subType: string) => {
             console.log('Connection manager event, sub type: ' + subType);
@@ -45,6 +49,12 @@ export default class ConnectionMgr {
                     if (this.connections[ConnectionType.BLUETOOTH]) {
                         this.connections[ConnectionType.BLUETOOTH].connect();
                         this.cmdToXRPMgr.setConnection(this.connections[ConnectionType.BLUETOOTH]);
+                    }
+                    break;
+                case ConnectionCMD.CONNECT_SIMULATION:
+                    if (this.connections[ConnectionType.SIMULATION]) {
+                        this.connections[ConnectionType.SIMULATION].connect();
+                        this.cmdToXRPMgr.setConnection(this.connections[ConnectionType.SIMULATION]);
                     }
                     break;
             }
@@ -64,8 +74,8 @@ export default class ConnectionMgr {
                 );
                 await this.cmdToXRPMgr.getOnBoardFSTree();
                 await this.activeConnection.getToNormal();
-                if (connType == ConnectionType.USB) {
-                    //if we connected via USB then we can release the BLE terminal
+                if (connType == ConnectionType.USB || connType == ConnectionType.SIMULATION) {
+                    //if we connected via USB/Simulation then we can release the BLE terminal
                     await this.cmdToXRPMgr.resetTerminal();
                 }
                 await this.cmdToXRPMgr.clearIsRunning();

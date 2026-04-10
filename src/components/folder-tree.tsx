@@ -474,11 +474,11 @@ function FolderTree(treeProps: TreeProps) {
                         newNode.fileId = data?.id;
                     });
                 } else if (isConnected) {
-                    // create the actual file in XRP
+                    // parentPath already ends with '/' so just append name (no extra slash)
                     await CommandToXRPMgr.getInstance().buildPath(
-                        newNode.path + '/' + newNode.name,
+                        newNode.path + newNode.name,
                     );
-                } 
+                }
             } else if (type === 'leaf') {
                 if (isLogin) {
                     const mintetype = newNode.name.includes('.py')
@@ -490,14 +490,14 @@ function FolderTree(treeProps: TreeProps) {
                             newNode.fileId = file.id;
                         }
                     });
-                } if (isConnected) {
-                    // create the actual file in XRP
+                } else if (isConnected) {
+                    // parentPath already ends with '/' so just append name (no extra slash)
                     await CommandToXRPMgr.getInstance().uploadFile(
-                        newNode.path + '/' + newNode.name,
+                        newNode.path + newNode.name,
                         '',
                         true,
                     );
-                } 
+                }
             }
         }
 

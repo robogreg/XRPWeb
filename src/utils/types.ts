@@ -1,6 +1,7 @@
 export enum ConnectionType {
     USB,
     BLUETOOTH,
+    SIMULATION,
 }
 
 export enum FileType {
@@ -15,9 +16,16 @@ export enum EditorType {
     OTHER = 'other'
 }
 
+export enum AIProvider {
+    PROXY = 'proxy',
+    GEMINI = 'gemini',
+    CLAUDE = 'claude',
+}
+
 export enum ConnectionCMD {
     CONNECT_USB = 'usb-connection',
     CONNECT_BLUETOOTH = 'bluetooth-connection',
+    CONNECT_SIMULATION = 'simulation-connection',
     CONNECT_RUN = 'run',
     CONNECT_STOP = 'stop'
 }

@@ -35,3 +35,33 @@ svg[display="none"] {
 .flexlayout__tab_moveable {
   overflow: hidden;
 }
+
+/* Dark mode styles for inline HTML code blocks in chat messages */
+/* These cannot use Tailwind dark: prefix since they are in JS template strings */
+.dark .code-block-wrapper {
+  border-color: rgb(75 85 99); /* mountain-mist-600 equivalent */
+}
+
+.dark .code-block-header {
+  background-color: rgb(31 41 55); /* mountain-mist-800 */
+  border-bottom-color: rgb(55 65 81); /* mountain-mist-700 */
+}
+
+.dark .code-block-header span {
+  color: rgb(156 163 175); /* mountain-mist-400 */
+}
+
+.dark .code-block-content {
+  background-color: rgb(17 24 39); /* mountain-mist-950 */
+  color: rgb(229 231 235); /* mountain-mist-200 */
+  border-color: rgb(55 65 81); /* mountain-mist-700 */
+}
+
+.dark .copy-btn {
+  color: rgb(156 163 175); /* mountain-mist-400 */
+}
+
+.dark .copy-btn:hover {
+  color: rgb(96 165 250); /* curious-blue-400 */
+  background-color: rgb(55 65 81); /* mountain-mist-700 */
+}

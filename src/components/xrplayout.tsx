@@ -5,6 +5,7 @@ import MonacoEditor from '@components/MonacoEditor';
 import XRPShell from '@components/xrpshell';
 import FolderIcon from '@assets/images/folder-24.png';
 import ShellIcon from '@assets/images/shell.svg';
+import ChatBotIcon from '@assets/images/chatbot.svg';
 //import treeDaaJson from '@/utils/testdata';
 import AppMgr, { EventType, Themes } from '@/managers/appmgr';
 import FolderTree from './folder-tree';
@@ -51,6 +52,46 @@ const layout_json: IJsonModel = {
                 },
             ],
         },
+        {
+            type: 'border',
+            location: 'right',
+            enableDrop: false,
+            enableAutoHide: true,
+            size: 380,
+            selected: -1,
+            children: [
+                {
+                    type: 'tab',
+                    id: Constants.AI_CHAT_TAB_ID,
+                    name: 'ai-chat',
+                    component: 'aichat',
+                    enableClose: false,
+                    enableDrag: false,
+                    enablePopout: false,
+                    icon: ChatBotIcon,
+                },
+            ],
+        },
+        {
+            type: 'border',
+            location: 'bottom',
+            enableDrop: false,
+            enableAutoHide: true,
+            size: 250,
+            selected: 0,
+            children: [
+                {
+                    type: 'tab',
+                    id: Constants.SHELL_TAB_ID,
+                    name: 'shell',
+                    component: 'xterm',
+                    enableClose: false,
+                    enableDrag: false,
+                    enablePopout: false,
+                    icon: ShellIcon,
+                },
+            ],
+        },
     ],
     layout: {
         type: 'row',
@@ -58,38 +99,12 @@ const layout_json: IJsonModel = {
         weight: 100,
         children: [
             {
-                type: 'row',
-                id: 'combinedRowId',
-                name: 'row-combined',
-                weight: 80,
-                children: [
-                    {
-                        type: 'tabset',
-                        id: Constants.EDITOR_TABSET_ID,
-                        name: 'editorTabset',
-                        weight: 70,
-                        enableDeleteWhenEmpty: false,
-                        children: [],
-                    },
-                    {
-                        type: 'tabset',
-                        id: Constants.SHELL_TABSET_ID,
-                        name: 'shellTabset',
-                        weight: 30,
-                        enableDrop: false,
-                        children: [
-                            {
-                                type: 'tab',
-                                id: Constants.SHELL_TAB_ID,
-                                name: 'shell',
-                                component: 'xterm',
-                                enableClose: false,
-                                enableDrag: false,
-                                enablePopout: false
-                            },
-                        ],
-                    },
-                ],
+                type: 'tabset',
+                id: Constants.EDITOR_TABSET_ID,
+                name: 'editorTabset',
+                weight: 100,
+                enableDeleteWhenEmpty: false,
+                children: [],
             },
         ],
     },
@@ -348,6 +363,8 @@ function XRPLayout({ forwardedref }: XRPLayoutProps) {
             renderValues.leading = <img src={FolderIcon} alt="icon" style={{ width: '16px', height: '16px', marginRight: '16px' }} />;
         } else if (node.getId() === Constants.SHELL_TAB_ID) {
             renderValues.leading = <img src={ShellIcon} alt="icon" style={{ width: '16px', height: '16px', marginRight: '0px' }} />;
+        } else if (node.getId() === Constants.AI_CHAT_TAB_ID) {
+            renderValues.leading = <img src={ChatBotIcon} alt="icon" style={{ width: '16px', height: '16px', marginRight: '16px' }} />;
         }
         renderValues.content = t(node.getName());
         if (EditorMgr.getInstance().hasSessionChanged(node.getId())) {

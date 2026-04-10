@@ -933,37 +933,12 @@ function NavBar({ layoutref }: NavBarProps) {
     }
 
     /**
-     * openAIChat - open the AI chat
+     * openAIChat - expand the AI Buddy right side panel
      */
     function openAIChat() {
         console.log('Opening AI Chat');
-        if (EditorMgr.getInstance().hasEditorSession(Constants.AI_CHAT_TAB_ID)) {
-            const layoutModel = EditorMgr.getInstance().getLayoutModel();
-            layoutModel?.doAction(Actions.selectTab(Constants.AI_CHAT_TAB_ID));
-            setActiveTab(t('ai-chat'));
-            return;
-        }
-        const tabInfo: IJsonTabNode = {
-            component: 'aichat',
-            name: 'ai-chat',
-            id: Constants.AI_CHAT_TAB_ID,
-            helpText: t('ai-chat-help'),
-        };
-        layoutref!.current?.addTabToTabSet(Constants.EDITOR_TABSET_ID, tabInfo);
-        EditorMgr.getInstance().AddEditor({
-            id: Constants.AI_CHAT_TAB_ID,
-            name: t('ai-chat'),
-            type: EditorType.OTHER,
-            path: '',
-            gpath: '',
-            isSubscribed: false,
-            fontsize: Constants.DEFAULT_FONTSIZE,
-            content: undefined,
-            lastUpdated: undefined,
-            isModified: false,
-        });
-        setIsOtherTab(true);
-        setActiveTab(t('ai-chat'));
+        const layoutModel = EditorMgr.getInstance().getLayoutModel();
+        layoutModel?.doAction(Actions.selectTab(Constants.AI_CHAT_TAB_ID));
     }
 
     /**
@@ -977,6 +952,9 @@ function NavBar({ layoutref }: NavBarProps) {
             toggleDialog();
         } else if (connType === ConnectionType.BLUETOOTH) {
             appMgr.emit(EventType.EVENT_CONNECTION, ConnectionCMD.CONNECT_BLUETOOTH);
+            toggleDialog();
+        } else if (connType === ConnectionType.SIMULATION) {
+            appMgr.emit(EventType.EVENT_CONNECTION, ConnectionCMD.CONNECT_SIMULATION);
             toggleDialog();
         }
     }

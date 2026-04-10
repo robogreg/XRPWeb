@@ -8,7 +8,8 @@ export default {
         './index.html',
         './src/**/*.{js,ts,jsx,tsx}',
         './node_modules/flowbite-react/**/*.{js,ts,jsx,tsx}',
-        ".flowbite-react/class-list.json"
+        ".flowbite-react/class-list.json",
+        ".flowbite-react\\class-list.json"
     ],
     theme: {
         colors: {

@@ -1,11 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChatMessage, ChatStatus } from '@/utils/types';
-import { GeminiClient } from '@/utils/gemini-client';
+import { ChatMessage, ChatStatus, AIProvider } from '@/utils/types';
 import { GeminiContextLoader, createContextLoader } from '@/utils/gemini-context-loader';
+import { createAIClient, getStoredProvider } from '@/utils/ai-client-factory';
+import { StorageKeys } from '@/utils/localstorage';
 import ChatMessageComponent from './chat-message';
-import { IoSend, IoSparkles, IoDocument, IoStop } from 'react-icons/io5';
+import { IoSend, IoSparkles, IoDocument, IoStop, IoWarning } from 'react-icons/io5';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
+
+const PROVIDERS: { value: AIProvider; label: string }[] = [
+    { value: AIProvider.PROXY, label: 'Proxy' },
+    { value: AIProvider.GEMINI, label: 'Gemini' },
+    { value: AIProvider.CLAUDE, label: 'Claude' },
+];
 
 export default function AIChat() {
     const { t, i18n } = useTranslation();
@@ -17,54 +24,71 @@ export default function AIChat() {
     const [textQueue, setTextQueue] = useState<string>('');
     const [sessionId, setSessionId] = useState<string>('');
     const [showHeader, setShowHeader] = useState<boolean>(true);
+    const [provider, setProvider] = useState<AIProvider>(getStoredProvider());
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const geminiClient = useRef<GeminiClient | null>(null);
+    const geminiClient = useRef<ReturnType<typeof createAIClient> | null>(null);
     const contextLoader = useRef<GeminiContextLoader | null>(null);
     const abortController = useRef<AbortController | null>(null);
 
+    const initializeClient = async (sid: string) => {
+        geminiClient.current = createAIClient();
+        setContextStatus('loading');
+        try {
+            await geminiClient.current.performHandshake();
+            const docStatus = await geminiClient.current.getDocsStatus(sid);
+            if (!docStatus.loaded) {
+                const res = await geminiClient.current.loadDocs(sid);
+                setContextStatus(res.success ? 'loaded' : 'error');
+            } else {
+                setContextStatus('loaded');
+            }
+        } catch (err) {
+            console.error("Handshake/Init failed", err);
+            setContextStatus('error');
+        }
+    };
+
     // Initialize client, context loader, and session on component mount
     useEffect(() => {
-        geminiClient.current = new GeminiClient();
         contextLoader.current = createContextLoader();
-
-        // Generate a unique session ID for this chat session
         const newSessionId = uuidv4();
         setSessionId(newSessionId);
-
-        // Ensure documentation is loaded via backend when chat opens
-        const initDocs = async () => {
-            if (!geminiClient.current || !newSessionId) return;
-            
-            try {
-                setContextStatus('loading');
-                
-                // STEP 1: Perform the handshake first!
-                await geminiClient.current.performHandshake();
-                
-                // STEP 2: Now that we have the cookie and token, check docs
-                const status = await geminiClient.current.getDocsStatus(newSessionId);
-                if (!status.loaded) {
-                    const res = await geminiClient.current.loadDocs(newSessionId);
-                    setContextStatus(res.success ? 'loaded' : 'error');
-                } else {
-                    setContextStatus('loaded');
-                }
-            } catch (err) {
-                console.error("Handshake/Init failed", err);
-                setContextStatus('error');
-            }
-        };
-        initDocs();
+        initializeClient(newSessionId);
 
         // Cleanup function when component unmounts (user closes chat or leaves IDE)
         return () => {
-            if (geminiClient.current && newSessionId) {
-                geminiClient.current.cleanupSession(newSessionId);
+            if (geminiClient.current && sessionId) {
+                geminiClient.current.cleanupSession(sessionId);
             }
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const switchProvider = async (newProvider: AIProvider) => {
+        if (newProvider === provider) return;
+        localStorage.setItem(StorageKeys.AI_PROVIDER, newProvider);
+        setProvider(newProvider);
+        // Abort any in-progress request
+        if (abortController.current) abortController.current.abort();
+        if (geminiClient.current && sessionId) {
+            geminiClient.current.cleanupSession(sessionId);
+        }
+        setMessages([]);
+        setStreamingMessage(null);
+        setStatus(ChatStatus.IDLE);
+        setShowHeader(true);
+        const newSessionId = uuidv4();
+        setSessionId(newSessionId);
+        await initializeClient(newSessionId);
+    };
+
+    const providerHasKey = (p: AIProvider) => {
+        if (p === AIProvider.GEMINI) return !!localStorage.getItem(StorageKeys.GEMINI_API_KEY);
+        if (p === AIProvider.CLAUDE) return !!localStorage.getItem(StorageKeys.CLAUDE_API_KEY);
+        return true; // proxy needs no key
+    };
 
     // Cleanup session when user closes browser tab or navigates away
     useEffect(() => {
@@ -249,6 +273,31 @@ export default function AIChat() {
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-mountain-mist-950">
+            {/* Provider Selector */}
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-mountain-mist-200 dark:border-mountain-mist-700 bg-mountain-mist-50 dark:bg-mountain-mist-900">
+                <span className="text-xs text-mountain-mist-500 dark:text-mountain-mist-400 font-medium shrink-0">AI:</span>
+                <div className="flex gap-1">
+                    {PROVIDERS.map(({ value, label }) => (
+                        <button
+                            key={value}
+                            onClick={() => switchProvider(value)}
+                            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                                provider === value
+                                    ? 'bg-curious-blue-600 text-white'
+                                    : 'bg-mountain-mist-200 dark:bg-mountain-mist-700 text-mountain-mist-600 dark:text-mountain-mist-300 hover:bg-mountain-mist-300 dark:hover:bg-mountain-mist-600'
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+                {!providerHasKey(provider) && (
+                    <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                        <IoWarning size={13} /> No API key — set in Settings
+                    </span>
+                )}
+            </div>
+
             {/* Header */}
             <div className={`flex items-center justify-between p-4 border-b border-mountain-mist-200 dark:border-mountain-mist-700 transition-opacity duration-500 ease-in-out ${showHeader ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}>
                 <div className="flex items-center gap-3">
